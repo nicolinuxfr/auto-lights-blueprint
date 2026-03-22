@@ -115,8 +115,15 @@ trigger:
       {{ control_var not in (none, [], '') and
          expand(control_var) | selectattr('state', 'eq', 'off') | list | count > 0 }}
     id: control_off
-  - platform: homeassistant
-    event: start
+  - platform: state
+    entity_id: !input sensors
+    from: "unavailable"
+    to: "off"
+    id: ha_start
+  - platform: state
+    entity_id: !input sensors
+    from: "unknown"
+    to: "off"
     id: ha_start
 
 action:

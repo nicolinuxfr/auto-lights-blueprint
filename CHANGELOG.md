@@ -4,7 +4,7 @@
 
 The cleanup edition.
 
-- Startup trigger: after Home Assistant restarts, wait the configured turn-off delay then turn off lights if no sensor is active. Prevents lights from staying on after a reboot.
+- Startup trigger: after Home Assistant restarts and sensors become available again, wait the configured turn-off delay then turn off lights if no sensor is active. Prevents lights from staying on after a reboot.
 - Code reorg.
 
 ## 2026.3.2
