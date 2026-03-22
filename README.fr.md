@@ -20,7 +20,7 @@ https://raw.githubusercontent.com/nicolinuxfr/auto-lights-blueprint/gh-pages/fr/
 |-----------|-------------|--------|--------|
 | **Lumières** | Les lumières à contrôler automatiquement | Oui | — |
 | **Capteurs** | Capteurs binaires qui déclenchent les lumières (mouvement, ouverture de porte/fenêtre, etc.) | Oui | — |
-| **Délai d'extinction** | Temps en secondes à attendre avant d'éteindre les lumières après que tous les capteurs sont devenus inactifs | Non | 120 |
+| **Délai d'extinction** | Temps à attendre avant d'éteindre les lumières après qu'un capteur est devenu inactif | Non | 00:02:00 |
 | **Interrupteur de contrôle** | Un `input_boolean` pour activer/désactiver l'automatisation | Non | — |
 
 ## Fonctionnement

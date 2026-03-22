@@ -20,7 +20,7 @@ https://raw.githubusercontent.com/nicolinuxfr/auto-lights-blueprint/gh-pages/en/
 |-------|-------------|----------|---------|
 | **Lights** | The lights to control automatically | Yes | — |
 | **Sensors** | Binary sensors that trigger the lights (motion, door/window, etc.) | Yes | — |
-| **Turn off delay** | Time in seconds to wait before turning off the lights after all sensors become inactive | No | 120 |
+| **Turn off delay** | Time to wait before turning off the lights after a sensor becomes inactive | No | 00:02:00 |
 | **Control switch** | An `input_boolean` to enable/disable the automation | No | — |
 
 ## How it works
