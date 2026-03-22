@@ -1,6 +1,6 @@
 {
   "blueprint.name": "Lumières automatiques",
-  "blueprint.description": "Allume et éteint automatiquement des lumières en fonction de capteurs binaires (capteurs de mouvement, capteurs d'ouverture, etc.), avec un interrupteur de contrôle optionnel pour activer ou désactiver l'automatisation.",
+  "blueprint.description": "Allume et éteint automatiquement des lumières en fonction de capteurs binaires (capteurs de mouvement, capteurs d'ouverture, etc.), avec des conditions d'éclairage et des interrupteurs de contrôle optionnels.",
   "blueprint.version.line": "Version : {version}",
   "input.lights.name": "Lumières",
   "input.lights.description": "Les lumières à contrôler automatiquement.",
@@ -8,8 +8,18 @@
   "input.sensors.description": "Capteurs binaires qui déclenchent les lumières (capteurs de mouvement, capteurs d'ouverture de porte/fenêtre, etc.).",
   "input.off_delay.name": "Délai d'extinction",
   "input.off_delay.description": "Temps à attendre avant d'éteindre les lumières après qu'un capteur est devenu inactif.",
-  "input.ignore_open_doors.name": "Ignorer les portes ouvertes",
-  "input.ignore_open_doors.description": "Quand activé (par défaut), les capteurs de porte/fenêtre restés ouverts n'empêchent pas l'extinction des lumières — seuls les capteurs de mouvement/présence sont vérifiés. Quand désactivé, les lumières restent allumées tant qu'un capteur (y compris les portes) est actif.",
-  "input.control_entity.name": "Interrupteur de contrôle (optionnel)",
-  "input.control_entity.description": "Un input_boolean qui active ou désactive l'automatisation. Quand il est activé, l'automatisation reprend et réagit aux capteurs. Quand il est désactivé, l'automatisation cesse de fonctionner. Laisser vide pour que l'automatisation soit toujours active."
+  "section.conditions": "Conditions d'éclairage",
+  "section.conditions.description": "Restreindre l'allumage selon la position du soleil ou la luminosité ambiante.",
+  "input.night_only.name": "Uniquement la nuit",
+  "input.night_only.description": "Quand activé, les lumières ne s'allument que lorsque le soleil est couché. Utilise l'entité soleil intégrée à Home Assistant.",
+  "input.light_sensors.name": "Capteurs de luminosité (optionnel)",
+  "input.light_sensors.description": "Capteurs d'éclairement à vérifier avant d'allumer les lumières. Si plusieurs capteurs sont sélectionnés, la valeur moyenne est utilisée.",
+  "input.light_threshold.name": "Seuil de luminosité",
+  "input.light_threshold.description": "Les lumières ne s'allumeront que si la luminosité moyenne est inférieure à cette valeur (en lux). Ignoré si aucun capteur de luminosité n'est sélectionné.",
+  "section.advanced": "Paramètres avancés",
+  "section.advanced.description": "Comportement des portes et interrupteurs de contrôle.",
+  "input.keep_on_open_doors.name": "Maintenir avec portes ouvertes",
+  "input.keep_on_open_doors.description": "Quand activé, les capteurs de porte/fenêtre ouverts empêchent l'extinction des lumières. Quand désactivé (par défaut), seuls les capteurs de mouvement/présence sont vérifiés — les portes ouvertes ne maintiennent pas les lumières.",
+  "input.control_entities.name": "Interrupteurs de contrôle (optionnel)",
+  "input.control_entities.description": "Des input_boolean qui activent ou désactivent l'automatisation. Tous les interrupteurs sélectionnés doivent être activés pour que l'automatisation fonctionne. Laisser vide pour que l'automatisation soit toujours active."
 }

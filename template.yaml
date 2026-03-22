@@ -30,30 +30,71 @@ blueprint:
         seconds: 0
       selector:
         duration:
-    ignore_open_doors:
-      name: "[[input.ignore_open_doors.name]]"
-      description: "[[input.ignore_open_doors.description]]"
-      default: true
-      selector:
-        boolean:
-    control_entity:
-      name: "[[input.control_entity.name]]"
-      description: "[[input.control_entity.description]]"
-      default: []
-      selector:
-        entity:
-          domain: input_boolean
+    conditions_settings:
+      name: "[[section.conditions]]"
+      icon: mdi:weather-sunny
+      description: "[[section.conditions.description]]"
+      collapsed: true
+      input:
+        night_only:
+          name: "[[input.night_only.name]]"
+          description: "[[input.night_only.description]]"
+          default: false
+          selector:
+            boolean:
+        light_sensors:
+          name: "[[input.light_sensors.name]]"
+          description: "[[input.light_sensors.description]]"
+          default: []
+          selector:
+            entity:
+              domain: sensor
+              device_class: illuminance
+              multiple: true
+        light_threshold:
+          name: "[[input.light_threshold.name]]"
+          description: "[[input.light_threshold.description]]"
+          default: 30
+          selector:
+            number:
+              min: 0
+              max: 1000
+              unit_of_measurement: lx
+              mode: box
+    advanced_settings:
+      name: "[[section.advanced]]"
+      icon: mdi:cog-outline
+      description: "[[section.advanced.description]]"
+      collapsed: true
+      input:
+        keep_on_open_doors:
+          name: "[[input.keep_on_open_doors.name]]"
+          description: "[[input.keep_on_open_doors.description]]"
+          default: false
+          selector:
+            boolean:
+        control_entities:
+          name: "[[input.control_entities.name]]"
+          description: "[[input.control_entities.description]]"
+          default: []
+          selector:
+            entity:
+              domain: input_boolean
+              multiple: true
 
 mode: restart
 max_exceeded: silent
 
 trigger_variables:
-  control_var: !input control_entity
+  control_var: !input control_entities
 
 variables:
-  control_entity: !input control_entity
+  control_entities: !input control_entities
   sensors: !input sensors
-  ignore_open_doors: !input ignore_open_doors
+  keep_on_open_doors: !input keep_on_open_doors
+  light_sensors: !input light_sensors
+  light_threshold: !input light_threshold
+  night_only: !input night_only
 
 trigger:
   - platform: state
@@ -66,11 +107,13 @@ trigger:
     id: sensor_off
   - platform: template
     value_template: >-
-      {{ control_var not in (none, [], '') and is_state(control_var, 'on') }}
+      {{ control_var not in (none, [], '') and
+         expand(control_var) | rejectattr('state', 'eq', 'on') | list | count == 0 }}
     id: control_on
   - platform: template
     value_template: >-
-      {{ control_var not in (none, [], '') and is_state(control_var, 'off') }}
+      {{ control_var not in (none, [], '') and
+         expand(control_var) | selectattr('state', 'eq', 'off') | list | count > 0 }}
     id: control_off
 
 action:
@@ -78,6 +121,17 @@ action:
       - conditions:
           - condition: trigger
             id: control_on
+          - condition: template
+            value_template: >-
+              {% set ls = light_sensors %}
+              {% set thr = light_threshold | float(0) %}
+              {% set has_night = night_only %}
+              {% set has_lux = ls not in (none, [], '') and thr > 0 %}
+              {% set night_ok = has_night and is_state('sun.sun', 'below_horizon') %}
+              {% set lux_ok = has_lux and
+                 (expand(ls) | map(attribute='state') | map('float', 0) | sum /
+                  [expand(ls) | list | count, 1] | max) < thr %}
+              {{ (not has_night and not has_lux) or night_ok or lux_ok }}
         sequence:
           - action: light.turn_on
             target: !input lights
@@ -86,7 +140,19 @@ action:
             id: sensor_on
           - condition: template
             value_template: >-
-              {{ control_entity in (none, [], '') or is_state(control_entity, 'on') }}
+              {{ control_entities in (none, [], '') or
+                 expand(control_entities) | rejectattr('state', 'eq', 'on') | list | count == 0 }}
+          - condition: template
+            value_template: >-
+              {% set ls = light_sensors %}
+              {% set thr = light_threshold | float(0) %}
+              {% set has_night = night_only %}
+              {% set has_lux = ls not in (none, [], '') and thr > 0 %}
+              {% set night_ok = has_night and is_state('sun.sun', 'below_horizon') %}
+              {% set lux_ok = has_lux and
+                 (expand(ls) | map(attribute='state') | map('float', 0) | sum /
+                  [expand(ls) | list | count, 1] | max) < thr %}
+              {{ (not has_night and not has_lux) or night_ok or lux_ok }}
         sequence:
           - action: light.turn_on
             target: !input lights
@@ -95,12 +161,13 @@ action:
             id: sensor_off
           - condition: template
             value_template: >-
-              {{ control_entity in (none, [], '') or is_state(control_entity, 'on') }}
+              {{ control_entities in (none, [], '') or
+                 expand(control_entities) | rejectattr('state', 'eq', 'on') | list | count == 0 }}
         sequence:
           - delay: !input off_delay
           - condition: template
             value_template: >-
-              {% if ignore_open_doors %}
+              {% if not keep_on_open_doors %}
                 {{ expand(sensors)
                    | selectattr('attributes.device_class', 'in', ['motion', 'occupancy', 'presence'])
                    | selectattr('state', 'eq', 'on')
@@ -119,7 +186,7 @@ action:
           - delay: !input off_delay
           - condition: template
             value_template: >-
-              {% if ignore_open_doors %}
+              {% if not keep_on_open_doors %}
                 {{ expand(sensors)
                    | selectattr('attributes.device_class', 'in', ['motion', 'occupancy', 'presence'])
                    | selectattr('state', 'eq', 'on')
