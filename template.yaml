@@ -30,6 +30,12 @@ blueprint:
         seconds: 0
       selector:
         duration:
+    ignore_open_doors:
+      name: "[[input.ignore_open_doors.name]]"
+      description: "[[input.ignore_open_doors.description]]"
+      default: true
+      selector:
+        boolean:
     control_entity:
       name: "[[input.control_entity.name]]"
       description: "[[input.control_entity.description]]"
@@ -46,6 +52,8 @@ trigger_variables:
 
 variables:
   control_entity: !input control_entity
+  sensors: !input sensors
+  ignore_open_doors: !input ignore_open_doors
 
 trigger:
   - platform: state
@@ -90,12 +98,18 @@ action:
               {{ control_entity in (none, [], '') or is_state(control_entity, 'on') }}
         sequence:
           - delay: !input off_delay
-          - condition: not
-            conditions:
-              - condition: state
-                entity_id: !input sensors
-                state: "on"
-                match: any
+          - condition: template
+            value_template: >-
+              {% if ignore_open_doors %}
+                {{ expand(sensors)
+                   | selectattr('attributes.device_class', 'in', ['motion', 'occupancy', 'presence'])
+                   | selectattr('state', 'eq', 'on')
+                   | list | count == 0 }}
+              {% else %}
+                {{ expand(sensors)
+                   | selectattr('state', 'eq', 'on')
+                   | list | count == 0 }}
+              {% endif %}
           - action: light.turn_off
             target: !input lights
       - conditions:
@@ -103,11 +117,17 @@ action:
             id: control_off
         sequence:
           - delay: !input off_delay
-          - condition: not
-            conditions:
-              - condition: state
-                entity_id: !input sensors
-                state: "on"
-                match: any
+          - condition: template
+            value_template: >-
+              {% if ignore_open_doors %}
+                {{ expand(sensors)
+                   | selectattr('attributes.device_class', 'in', ['motion', 'occupancy', 'presence'])
+                   | selectattr('state', 'eq', 'on')
+                   | list | count == 0 }}
+              {% else %}
+                {{ expand(sensors)
+                   | selectattr('state', 'eq', 'on')
+                   | list | count == 0 }}
+              {% endif %}
           - action: light.turn_off
             target: !input lights

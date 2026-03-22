@@ -8,6 +8,8 @@
   "input.sensors.description": "Binary sensors that trigger the lights (motion sensors, door/window sensors, etc.).",
   "input.off_delay.name": "Turn off delay",
   "input.off_delay.description": "Time to wait before turning off the lights after a sensor becomes inactive.",
+  "input.ignore_open_doors.name": "Ignore open doors",
+  "input.ignore_open_doors.description": "When enabled (default), open door/window sensors do not prevent lights from turning off — only motion/presence sensors are checked. When disabled, lights stay on as long as any sensor (including doors) remains active.",
   "input.control_entity.name": "Control switch (optional)",
   "input.control_entity.description": "An input_boolean that enables or disables the automation. When turned on, the automation resumes and reacts to sensors. When turned off, the automation stops responding. Leave empty to always keep the automation active."
 }

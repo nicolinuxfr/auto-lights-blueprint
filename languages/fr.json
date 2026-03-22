@@ -8,6 +8,8 @@
   "input.sensors.description": "Capteurs binaires qui déclenchent les lumières (capteurs de mouvement, capteurs d'ouverture de porte/fenêtre, etc.).",
   "input.off_delay.name": "Délai d'extinction",
   "input.off_delay.description": "Temps à attendre avant d'éteindre les lumières après qu'un capteur est devenu inactif.",
+  "input.ignore_open_doors.name": "Ignorer les portes ouvertes",
+  "input.ignore_open_doors.description": "Quand activé (par défaut), les capteurs de porte/fenêtre restés ouverts n'empêchent pas l'extinction des lumières — seuls les capteurs de mouvement/présence sont vérifiés. Quand désactivé, les lumières restent allumées tant qu'un capteur (y compris les portes) est actif.",
   "input.control_entity.name": "Interrupteur de contrôle (optionnel)",
   "input.control_entity.description": "Un input_boolean qui active ou désactive l'automatisation. Quand il est activé, l'automatisation reprend et réagit aux capteurs. Quand il est désactivé, l'automatisation cesse de fonctionner. Laisser vide pour que l'automatisation soit toujours active."
 }
