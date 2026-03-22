@@ -115,29 +115,17 @@ trigger:
       {{ control_var not in (none, [], '') and
          expand(control_var) | selectattr('state', 'eq', 'off') | list | count > 0 }}
     id: control_off
+  - platform: homeassistant
+    event: start
+    id: ha_start
 
 action:
   - choose:
       - conditions:
           - condition: trigger
-            id: control_on
-          - condition: template
-            value_template: >-
-              {% set ls = light_sensors %}
-              {% set thr = light_threshold | float(0) %}
-              {% set has_night = night_only %}
-              {% set has_lux = ls not in (none, [], '') and thr > 0 %}
-              {% set night_ok = has_night and is_state('sun.sun', 'below_horizon') %}
-              {% set lux_ok = has_lux and
-                 (expand(ls) | map(attribute='state') | map('float', 0) | sum /
-                  [expand(ls) | list | count, 1] | max) < thr %}
-              {{ (not has_night and not has_lux) or night_ok or lux_ok }}
-        sequence:
-          - action: light.turn_on
-            target: !input lights
-      - conditions:
-          - condition: trigger
-            id: sensor_on
+            id:
+              - sensor_on
+              - control_on
           - condition: template
             value_template: >-
               {{ control_entities in (none, [], '') or
@@ -158,32 +146,17 @@ action:
             target: !input lights
       - conditions:
           - condition: trigger
-            id: sensor_off
+            id:
+              - sensor_off
+              - control_off
+              - ha_start
+        sequence:
+          - delay: !input off_delay
           - condition: template
             value_template: >-
-              {{ control_entities in (none, [], '') or
+              {{ trigger.id == 'control_off' or
+                 control_entities in (none, [], '') or
                  expand(control_entities) | rejectattr('state', 'eq', 'on') | list | count == 0 }}
-        sequence:
-          - delay: !input off_delay
-          - condition: template
-            value_template: >-
-              {% if not keep_on_open_doors %}
-                {{ expand(sensors)
-                   | selectattr('attributes.device_class', 'in', ['motion', 'occupancy', 'presence'])
-                   | selectattr('state', 'eq', 'on')
-                   | list | count == 0 }}
-              {% else %}
-                {{ expand(sensors)
-                   | selectattr('state', 'eq', 'on')
-                   | list | count == 0 }}
-              {% endif %}
-          - action: light.turn_off
-            target: !input lights
-      - conditions:
-          - condition: trigger
-            id: control_off
-        sequence:
-          - delay: !input off_delay
           - condition: template
             value_template: >-
               {% if not keep_on_open_doors %}
