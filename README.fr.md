@@ -1,6 +1,6 @@
 # Blueprint Lumières automatiques
 
-Allume et éteint automatiquement des lumières en fonction de capteurs binaires (capteurs de mouvement, capteurs d'ouverture, etc.), avec un interrupteur de contrôle optionnel pour activer ou désactiver l'automatisation.
+Allume et éteint automatiquement des lumières en fonction de capteurs binaires (capteurs de mouvement, capteurs d'ouverture, etc.), avec des conditions d'éclairage et des interrupteurs de contrôle optionnels.
 
 [Read in English](README.md)
 
@@ -21,18 +21,38 @@ https://raw.githubusercontent.com/nicolinuxfr/auto-lights-blueprint/gh-pages/fr/
 | **Lumières** | Les lumières à contrôler automatiquement | Oui | — |
 | **Capteurs** | Capteurs binaires qui déclenchent les lumières (mouvement, ouverture de porte/fenêtre, etc.) | Oui | — |
 | **Délai d'extinction** | Temps à attendre avant d'éteindre les lumières après qu'un capteur est devenu inactif | Non | 00:02:00 |
-| **Interrupteur de contrôle** | Un `input_boolean` pour activer/désactiver l'automatisation | Non | — |
+
+### Conditions d'éclairage
+
+| Paramètre | Description | Défaut |
+|-----------|-------------|--------|
+| **Uniquement la nuit** | N'allume les lumières que lorsque le soleil est couché | Désactivé |
+| **Capteurs de luminosité** | Capteurs d'éclairement à vérifier avant l'allumage (moyenne si plusieurs) | — |
+| **Seuil de luminosité** | Les lumières ne s'allument que si la luminosité moyenne est inférieure à cette valeur | 30 lx |
+
+### Paramètres avancés
+
+| Paramètre | Description | Défaut |
+|-----------|-------------|--------|
+| **Maintenir avec portes ouvertes** | Les capteurs de porte/fenêtre ouverts empêchent l'extinction | Désactivé |
+| **Interrupteurs de contrôle** | Des `input_boolean` qui activent/désactivent l'automatisation (tous doivent être activés) | — |
 
 ## Fonctionnement
 
 1. Quand un capteur sélectionné devient actif (mouvement détecté, porte ouverte, etc.), les lumières s'allument.
 2. Quand tous les capteurs deviennent inactifs, le blueprint attend le délai configuré avant d'éteindre les lumières.
 3. Si un capteur redevient actif pendant le délai, le minuteur se réinitialise et les lumières restent allumées.
-4. Si un **interrupteur de contrôle** est configuré :
-   - Quand l'interrupteur est **activé**, l'automatisation fonctionne normalement.
-   - Quand l'interrupteur est **désactivé**, l'automatisation cesse de répondre aux capteurs.
-   - Quand l'interrupteur est **réactivé**, l'automatisation reprend immédiatement : si un capteur est actuellement actif, les lumières s'allument.
+4. Par défaut, les capteurs de porte/fenêtre restés ouverts n'empêchent pas l'extinction — seuls les capteurs de mouvement/présence sont vérifiés.
 
-## Limitations connues
+### Conditions d'éclairage
 
-- Le délai d'extinction s'applique de manière identique à tous les types de capteurs. Si vous mélangez des capteurs de mouvement (où un délai est utile) et des capteurs d'ouverture (où une extinction immédiate peut être préférable), vous devrez peut-être créer des automatisations séparées.
+Les conditions d'éclairage n'affectent que l'**allumage** des lumières. L'extinction fonctionne toujours, indépendamment du soleil ou de la luminosité.
+
+- **Uniquement la nuit** : les lumières ne s'allument que quand le soleil est couché, en utilisant l'entité `sun.sun` intégrée à Home Assistant.
+- **Capteurs de luminosité + seuil** : les lumières ne s'allument que si la luminosité moyenne est inférieure au seuil.
+- **Les deux activés** : les lumières s'allument si **l'une ou l'autre** des conditions est remplie (nuit OU faible luminosité).
+- **Aucune condition** : les lumières s'allument toujours quand un capteur se déclenche.
+
+### Interrupteurs de contrôle
+
+Si un ou plusieurs **interrupteurs de contrôle** sont configurés, ils doivent tous être activés pour que l'automatisation fonctionne. Quand un interrupteur est désactivé, les lumières s'éteignent après le délai configuré. Quand tous les interrupteurs sont réactivés, l'automatisation reprend immédiatement.

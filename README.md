@@ -1,6 +1,6 @@
 # Auto Lights Blueprint
 
-Automatically turn lights on and off based on binary sensors (motion sensors, door sensors, etc.), with an optional control switch to enable or disable the automation.
+Automatically turn lights on and off based on binary sensors (motion sensors, door sensors, etc.), with optional lighting conditions and control switches.
 
 [Lire en français](README.fr.md)
 
@@ -21,18 +21,38 @@ https://raw.githubusercontent.com/nicolinuxfr/auto-lights-blueprint/gh-pages/en/
 | **Lights** | The lights to control automatically | Yes | — |
 | **Sensors** | Binary sensors that trigger the lights (motion, door/window, etc.) | Yes | — |
 | **Turn off delay** | Time to wait before turning off the lights after a sensor becomes inactive | No | 00:02:00 |
-| **Control switch** | An `input_boolean` to enable/disable the automation | No | — |
+
+### Lighting conditions
+
+| Input | Description | Default |
+|-------|-------------|---------|
+| **Night only** | Only turn on lights when the sun is below the horizon | Off |
+| **Luminosity sensors** | Illuminance sensors to check before turning on (average is used if multiple) | — |
+| **Luminosity threshold** | Lights turn on only if average luminosity is below this value | 30 lx |
+
+### Advanced settings
+
+| Input | Description | Default |
+|-------|-------------|---------|
+| **Keep lights on with open doors** | Open door/window sensors prevent lights from turning off | Off |
+| **Control switches** | `input_boolean` entities that enable/disable the automation (all must be on) | — |
 
 ## How it works
 
 1. When any selected sensor becomes active (motion detected, door opened, etc.), the lights turn on.
 2. When all sensors become inactive, the blueprint waits for the configured delay before turning off the lights.
 3. If a sensor becomes active again during the delay, the timer resets and the lights stay on.
-4. If a **control switch** is configured:
-   - When the switch is **on**, the automation works normally.
-   - When the switch is **off**, the automation stops responding to sensors.
-   - When the switch is turned **on** again, the automation resumes immediately: if any sensor is currently active, the lights turn on.
+4. By default, open door/window sensors do not prevent the lights from turning off — only motion/presence sensors are checked.
 
-## Known limitations
+### Lighting conditions
 
-- The turn-off delay applies equally to all sensor types. If you mix motion sensors (where a delay is useful) with door sensors (where you might want instant off), you may need separate automations.
+The lighting conditions only affect **turning on** the lights. Turning off always works regardless of sun or luminosity.
+
+- **Night only**: lights turn on only when the sun is below the horizon, using the built-in Home Assistant `sun.sun` entity.
+- **Luminosity sensors + threshold**: lights turn on only when the average luminosity is below the threshold.
+- **Both enabled**: lights turn on if **either** condition is met (night OR low luminosity).
+- **Neither enabled**: lights always turn on when a sensor triggers.
+
+### Control switches
+
+If one or more **control switches** are configured, all of them must be on for the automation to work. When any switch is turned off, the lights turn off after the configured delay. When all switches are back on, the automation resumes immediately.
