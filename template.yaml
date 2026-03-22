@@ -1,0 +1,109 @@
+blueprint:
+  name: "[[blueprint.name]] ([[blueprint.version]])"
+  description: |-
+    [[blueprint.description]]
+
+    [[blueprint.version.line]] — [Changelog](https://github.com/nicolinuxfr/auto-lights-blueprint/blob/main/CHANGELOG.md#[[blueprint.version.nodots]])
+  domain: automation
+  source_url: https://github.com/nicolinuxfr/auto-lights-blueprint/blob/main/template.yaml
+  input:
+    lights:
+      name: "[[input.lights.name]]"
+      description: "[[input.lights.description]]"
+      selector:
+        target:
+          entity:
+            domain: light
+    sensors:
+      name: "[[input.sensors.name]]"
+      description: "[[input.sensors.description]]"
+      selector:
+        entity:
+          domain: binary_sensor
+          multiple: true
+    off_delay:
+      name: "[[input.off_delay.name]]"
+      description: "[[input.off_delay.description]]"
+      default: 120
+      selector:
+        number:
+          min: 0
+          max: 3600
+          unit_of_measurement: seconds
+    control_entity:
+      name: "[[input.control_entity.name]]"
+      description: "[[input.control_entity.description]]"
+      default: []
+      selector:
+        entity:
+          domain: input_boolean
+
+mode: restart
+max_exceeded: silent
+
+trigger_variables:
+  control_var: !input control_entity
+
+variables:
+  control_entity: !input control_entity
+
+trigger:
+  - platform: state
+    entity_id: !input sensors
+    to: "on"
+    id: sensor_on
+  - platform: state
+    entity_id: !input sensors
+    to: "off"
+    id: sensor_off
+  - platform: template
+    value_template: >-
+      {{ control_var not in (none, [], '') and is_state(control_var, 'on') }}
+    id: control_on
+
+action:
+  - choose:
+      - conditions:
+          - condition: trigger
+            id: control_on
+        sequence:
+          - if:
+              - condition: state
+                entity_id: !input sensors
+                state: "on"
+                match: any
+            then:
+              - action: light.turn_on
+                target: !input lights
+      - conditions:
+          - condition: trigger
+            id: sensor_on
+          - condition: template
+            value_template: >-
+              {{ control_entity in (none, [], '') or is_state(control_entity, 'on') }}
+        sequence:
+          - action: light.turn_on
+            target: !input lights
+      - conditions:
+          - condition: trigger
+            id: sensor_off
+          - condition: template
+            value_template: >-
+              {{ control_entity in (none, [], '') or is_state(control_entity, 'on') }}
+          - condition: not
+            conditions:
+              - condition: state
+                entity_id: !input sensors
+                state: "on"
+                match: any
+        sequence:
+          - delay:
+              seconds: !input off_delay
+          - condition: not
+            conditions:
+              - condition: state
+                entity_id: !input sensors
+                state: "on"
+                match: any
+          - action: light.turn_off
+            target: !input lights

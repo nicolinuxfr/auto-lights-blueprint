@@ -1,0 +1,13 @@
+{
+  "blueprint.name": "Auto Lights",
+  "blueprint.description": "Automatically turn lights on and off based on binary sensors (motion sensors, door sensors, etc.), with an optional control switch to enable or disable the automation.",
+  "blueprint.version.line": "Version: {version}",
+  "input.lights.name": "Lights",
+  "input.lights.description": "The lights to control automatically.",
+  "input.sensors.name": "Sensors",
+  "input.sensors.description": "Binary sensors that trigger the lights (motion sensors, door/window sensors, etc.).",
+  "input.off_delay.name": "Turn off delay",
+  "input.off_delay.description": "Time in seconds to wait before turning off the lights after all sensors become inactive.",
+  "input.control_entity.name": "Control switch (optional)",
+  "input.control_entity.description": "An input_boolean that enables or disables the automation. When turned on, the automation resumes and reacts to sensors. When turned off, the automation stops responding. Leave empty to always keep the automation active."
+}
