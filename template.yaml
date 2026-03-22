@@ -60,6 +60,10 @@ trigger:
     value_template: >-
       {{ control_var not in (none, [], '') and is_state(control_var, 'on') }}
     id: control_on
+  - platform: template
+    value_template: >-
+      {{ control_var not in (none, [], '') and is_state(control_var, 'off') }}
+    id: control_off
 
 action:
   - choose:
@@ -67,14 +71,8 @@ action:
           - condition: trigger
             id: control_on
         sequence:
-          - if:
-              - condition: state
-                entity_id: !input sensors
-                state: "on"
-                match: any
-            then:
-              - action: light.turn_on
-                target: !input lights
+          - action: light.turn_on
+            target: !input lights
       - conditions:
           - condition: trigger
             id: sensor_on
@@ -90,6 +88,19 @@ action:
           - condition: template
             value_template: >-
               {{ control_entity in (none, [], '') or is_state(control_entity, 'on') }}
+        sequence:
+          - delay: !input off_delay
+          - condition: not
+            conditions:
+              - condition: state
+                entity_id: !input sensors
+                state: "on"
+                match: any
+          - action: light.turn_off
+            target: !input lights
+      - conditions:
+          - condition: trigger
+            id: control_off
         sequence:
           - delay: !input off_delay
           - condition: not
