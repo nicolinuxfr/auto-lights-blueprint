@@ -1,5 +1,12 @@
 # Changelog
 
+## 2026.3.4
+
+The bugfix edition.
+
+- Fix: correct lights going on after a sensor goes from unvailable to on after restart ;
+- Fix: correct handling of doors on restart.
+
 ## 2026.3.3
 
 The cleanup edition.

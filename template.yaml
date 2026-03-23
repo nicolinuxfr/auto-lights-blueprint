@@ -100,10 +100,16 @@ trigger:
   - platform: state
     entity_id: !input sensors
     to: "on"
+    not_from:
+      - "unavailable"
+      - "unknown"
     id: sensor_on
   - platform: state
     entity_id: !input sensors
     to: "off"
+    not_from:
+      - "unavailable"
+      - "unknown"
     id: sensor_off
   - platform: template
     value_template: >-
@@ -137,6 +143,10 @@ action:
             value_template: >-
               {{ control_entities in (none, [], '') or
                  expand(control_entities) | rejectattr('state', 'eq', 'on') | list | count == 0 }}
+          - condition: template
+            value_template: >-
+              {{ trigger.id == 'control_on' or keep_on_open_doors or
+                 state_attr(trigger.entity_id, 'device_class') in ['motion', 'occupancy', 'presence'] }}
           - condition: template
             value_template: >-
               {% set ls = light_sensors %}
