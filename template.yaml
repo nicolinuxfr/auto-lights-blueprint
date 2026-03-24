@@ -141,6 +141,10 @@ action:
               - control_on
           - condition: template
             value_template: >-
+              {{ trigger.id == 'control_on' or
+                 trigger.from_state.state not in ['unavailable', 'unknown'] }}
+          - condition: template
+            value_template: >-
               {{ control_entities in (none, [], '') or
                  expand(control_entities) | rejectattr('state', 'eq', 'on') | list | count == 0 }}
           - condition: template

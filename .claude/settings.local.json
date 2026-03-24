@@ -1,7 +1,8 @@
 {
   "permissions": {
     "allow": [
-      "Bash(python3 scripts/generate_blueprints.py)"
+      "Bash(python3 scripts/generate_blueprints.py)",
+      "Bash(ls /Users/nicolas/Developer/domotique/auto-lights-blueprint/*.py /Users/nicolas/Developer/domotique/auto-lights-blueprint/Makefile)"
     ]
   }
 }
