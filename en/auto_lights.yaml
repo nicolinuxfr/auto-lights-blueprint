@@ -1,0 +1,197 @@
+blueprint:
+  name: "Auto Lights (2026.3.5)"
+  description: |-
+    Automatically turn lights on and off based on binary sensors (motion sensors, door sensors, etc.), with optional lighting conditions and control switches.
+
+    Version: 2026.3.5 — [Changelog](https://github.com/nicolinuxfr/auto-lights-blueprint/blob/main/CHANGELOG.md#202635)
+  domain: automation
+  source_url: https://github.com/nicolinuxfr/auto-lights-blueprint/blob/main/template.yaml
+  input:
+    lights:
+      name: "Lights"
+      description: "The lights to control automatically."
+      selector:
+        target:
+          entity:
+            domain: light
+    sensors:
+      name: "Sensors"
+      description: "Binary sensors that trigger the lights (motion sensors, door/window sensors, etc.)."
+      selector:
+        entity:
+          domain: binary_sensor
+          multiple: true
+    off_delay:
+      name: "Turn off delay"
+      description: "Time to wait before turning off the lights after a sensor becomes inactive."
+      default:
+        hours: 0
+        minutes: 2
+        seconds: 0
+      selector:
+        duration:
+    conditions_settings:
+      name: "Lighting conditions"
+      icon: mdi:weather-sunny
+      description: "Restrict when lights turn on based on sun position or ambient luminosity."
+      collapsed: true
+      input:
+        night_only:
+          name: "Night only"
+          description: "When enabled, lights only turn on when the sun is below the horizon. Uses the built-in Home Assistant sun entity."
+          default: false
+          selector:
+            boolean:
+        light_sensors:
+          name: "Luminosity sensors (optional)"
+          description: "Illuminance sensors to check before turning on the lights. If multiple sensors are selected, the average value is used."
+          default: []
+          selector:
+            entity:
+              domain: sensor
+              device_class: illuminance
+              multiple: true
+        light_threshold:
+          name: "Luminosity threshold"
+          description: "Lights will only turn on if the average luminosity is below this value (in lux). Ignored if no luminosity sensor is selected."
+          default: 30
+          selector:
+            number:
+              min: 0
+              max: 1000
+              unit_of_measurement: lx
+              mode: box
+    advanced_settings:
+      name: "Advanced settings"
+      icon: mdi:cog-outline
+      description: "Door behavior and control switches."
+      collapsed: true
+      input:
+        keep_on_open_doors:
+          name: "Keep lights on with open doors"
+          description: "When enabled, open door/window sensors prevent lights from turning off. When disabled (default), only motion/presence sensors are checked — open doors do not keep the lights on."
+          default: false
+          selector:
+            boolean:
+        control_entities:
+          name: "Control switches (optional)"
+          description: "Input booleans that enable or disable the automation. All selected switches must be on for the automation to work. Leave empty to always keep the automation active."
+          default: []
+          selector:
+            entity:
+              domain: input_boolean
+              multiple: true
+
+mode: restart
+max_exceeded: silent
+
+trigger_variables:
+  control_var: !input control_entities
+
+variables:
+  control_entities: !input control_entities
+  sensors: !input sensors
+  keep_on_open_doors: !input keep_on_open_doors
+  light_sensors: !input light_sensors
+  light_threshold: !input light_threshold
+  night_only: !input night_only
+
+trigger:
+  - platform: state
+    entity_id: !input sensors
+    to: "on"
+    not_from:
+      - "unavailable"
+      - "unknown"
+    id: sensor_on
+  - platform: state
+    entity_id: !input sensors
+    to: "off"
+    not_from:
+      - "unavailable"
+      - "unknown"
+    id: sensor_off
+  - platform: template
+    value_template: >-
+      {{ control_var not in (none, [], '') and
+         expand(control_var) | rejectattr('state', 'eq', 'on') | list | count == 0 }}
+    id: control_on
+  - platform: template
+    value_template: >-
+      {{ control_var not in (none, [], '') and
+         expand(control_var) | selectattr('state', 'eq', 'off') | list | count > 0 }}
+    id: control_off
+  - platform: state
+    entity_id: !input sensors
+    from: "unavailable"
+    to: "off"
+    id: ha_start
+  - platform: state
+    entity_id: !input sensors
+    from: "unknown"
+    to: "off"
+    id: ha_start
+
+action:
+  - choose:
+      - conditions:
+          - condition: trigger
+            id:
+              - sensor_on
+              - control_on
+          - condition: template
+            value_template: >-
+              {% if trigger.id == 'control_on' %}
+                {{ expand(sensors) | selectattr('state', 'eq', 'on') | list | count > 0 }}
+              {% else %}
+                {{ trigger.from_state.state not in ['unavailable', 'unknown'] }}
+              {% endif %}
+          - condition: template
+            value_template: >-
+              {{ control_entities in (none, [], '') or
+                 expand(control_entities) | rejectattr('state', 'eq', 'on') | list | count == 0 }}
+          - condition: template
+            value_template: >-
+              {{ trigger.id == 'control_on' or keep_on_open_doors or
+                 state_attr(trigger.entity_id, 'device_class') in ['motion', 'occupancy', 'presence'] }}
+          - condition: template
+            value_template: >-
+              {% set ls = light_sensors %}
+              {% set thr = light_threshold | float(0) %}
+              {% set has_night = night_only %}
+              {% set has_lux = ls not in (none, [], '') and thr > 0 %}
+              {% set night_ok = has_night and is_state('sun.sun', 'below_horizon') %}
+              {% set lux_ok = has_lux and
+                 (expand(ls) | map(attribute='state') | map('float', 0) | sum /
+                  [expand(ls) | list | count, 1] | max) < thr %}
+              {{ (not has_night and not has_lux) or night_ok or lux_ok }}
+        sequence:
+          - action: light.turn_on
+            target: !input lights
+      - conditions:
+          - condition: trigger
+            id:
+              - sensor_off
+              - control_off
+              - ha_start
+        sequence:
+          - delay: !input off_delay
+          - condition: template
+            value_template: >-
+              {{ trigger.id == 'control_off' or
+                 control_entities in (none, [], '') or
+                 expand(control_entities) | rejectattr('state', 'eq', 'on') | list | count == 0 }}
+          - condition: template
+            value_template: >-
+              {% if not keep_on_open_doors %}
+                {{ expand(sensors)
+                   | selectattr('attributes.device_class', 'in', ['motion', 'occupancy', 'presence'])
+                   | selectattr('state', 'eq', 'on')
+                   | list | count == 0 }}
+              {% else %}
+                {{ expand(sensors)
+                   | selectattr('state', 'eq', 'on')
+                   | list | count == 0 }}
+              {% endif %}
+          - action: light.turn_off
+            target: !input lights
