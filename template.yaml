@@ -141,8 +141,11 @@ action:
               - control_on
           - condition: template
             value_template: >-
-              {{ trigger.id == 'control_on' or
-                 trigger.from_state.state not in ['unavailable', 'unknown'] }}
+              {% if trigger.id == 'control_on' %}
+                {{ expand(sensors) | selectattr('state', 'eq', 'on') | list | count > 0 }}
+              {% else %}
+                {{ trigger.from_state.state not in ['unavailable', 'unknown'] }}
+              {% endif %}
           - condition: template
             value_template: >-
               {{ control_entities in (none, [], '') or
